@@ -11,6 +11,7 @@ import 'package:tenthousandshotchallenge/Navigation.dart';
 import '../mock_firebase.dart';
 import 'package:tenthousandshotchallenge/theme/PreferencesStateNotifier.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'dart:async';
 import 'package:tenthousandshotchallenge/router.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -107,6 +108,7 @@ void main() {
           providers: [
             Provider<AppleSignInAvailable>.value(value: AppleSignInAvailable(false)),
             ChangeNotifierProvider<PreferencesStateNotifier>(create: (_) => PreferencesStateNotifier()),
+            ChangeNotifierProvider<CustomerInfoNotifier>(create: (_) => CustomerInfoNotifier()),
             ChangeNotifierProvider<IntroShownNotifier>.value(value: testIntroShownNotifier),
             Provider<FirebaseAuth>.value(value: auth),
             Provider<FirebaseFirestore>.value(value: firestore),

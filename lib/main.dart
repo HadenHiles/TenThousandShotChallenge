@@ -55,7 +55,6 @@ void main() {
       error,
       stackTrace,
       reason: 'Uncaught root zone error',
-      fatal: true,
     );
   });
 }
@@ -365,6 +364,9 @@ Future<void> _refreshFcmToken(FirebaseMessaging messaging, SharedPreferences? pr
       preferences?.fcmToken = token;
     }
   } catch (error, stackTrace) {
+    if (error is PlatformException && (error.message?.contains('TOO_MANY_REGISTRATIONS') ?? false)) {
+      return;
+    }
     _reportOptionalStartupError('FCM token', error, stackTrace);
   }
 }
@@ -581,11 +583,13 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
             firestore: Provider.of<FirebaseFirestore>(context, listen: false),
           );
         } catch (error, stackTrace) {
-          ObservabilityService.recordError(
-            error,
-            stackTrace,
-            reason: 'Reconciling team memberships after authentication',
-          );
+          if (error is! FirebaseException || error.code != 'unavailable') {
+            ObservabilityService.recordError(
+              error,
+              stackTrace,
+              reason: 'Reconciling team memberships after authentication',
+            );
+          }
         }
         await initRevenueCat(user.uid);
         if (RevenueCatConfig.configured) {
@@ -616,15 +620,18 @@ class _HomeState extends State<Home> with WidgetsBindingObserver {
         // Set user's timezone in Firestore
         try {
           final String timezone = await FlutterTimezone.getLocalTimezone();
+          if (FirebaseAuth.instance.currentUser?.uid != user.uid) return;
           await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
             'timezone': timezone,
           }, SetOptions(merge: true));
         } catch (error, stackTrace) {
-          ObservabilityService.recordError(
-            error,
-            stackTrace,
-            reason: 'Updating user timezone',
-          );
+          if (error is! FirebaseException || error.code != 'permission-denied') {
+            ObservabilityService.recordError(
+              error,
+              stackTrace,
+              reason: 'Updating user timezone',
+            );
+          }
         }
       } else if (user == null && _lastUser != null) {
         _lastUser = null;

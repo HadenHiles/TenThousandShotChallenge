@@ -98,5 +98,9 @@ class UserProfile {
     };
   }
 
-  UserProfile.fromSnapshot(DocumentSnapshot snapshot) : this.fromMap(snapshot.data() as Map<String, dynamic>, reference: snapshot.reference);
+  UserProfile.fromSnapshot(DocumentSnapshot snapshot)
+      : this.fromMap(
+          snapshot.data() as Map<String, dynamic>? ?? const <String, dynamic>{},
+          reference: snapshot.reference,
+        );
 }

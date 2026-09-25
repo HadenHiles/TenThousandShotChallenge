@@ -36,7 +36,6 @@ abstract final class ObservabilityService {
         details.exception,
         details.stack ?? StackTrace.current,
         reason: details.context?.toDescription() ?? 'Flutter framework error',
-        fatal: true,
       );
     };
 
@@ -45,7 +44,6 @@ abstract final class ObservabilityService {
         error,
         stackTrace,
         reason: 'Uncaught platform dispatcher error',
-        fatal: true,
       );
       return true;
     };

@@ -10,6 +10,7 @@ import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/services/NetworkStatusService.dart';
+import 'package:tenthousandshotchallenge/services/ObservabilityService.dart';
 import 'package:tenthousandshotchallenge/services/VersionCheck.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCat.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
@@ -352,6 +353,23 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     _crSessionTimer = null;
   }
 
+  Future<void> _closeSessionPanel() async {
+    if (!sessionPanelController.isAttached || sessionPanelController.isPanelAnimating || sessionPanelController.isPanelClosed) return;
+    await sessionPanelController.close();
+    if (mounted) setState(() => _sessionPanelState = PanelState.CLOSED);
+  }
+
+  void _toggleSessionPanel() {
+    if (!mounted || !sessionPanelController.isAttached || sessionPanelController.isPanelAnimating) return;
+    final opening = sessionPanelController.isPanelClosed;
+    if (opening) {
+      unawaited(sessionPanelController.open());
+    } else {
+      unawaited(sessionPanelController.close());
+    }
+    setState(() => _sessionPanelState = opening ? PanelState.OPEN : PanelState.CLOSED);
+  }
+
   void _onChallengerRoadAvailabilityChanged(bool hasAccess) {
     if (!mounted || _startTabHasChallengerRoadAccess == hasAccess) return;
     setState(() {
@@ -371,10 +389,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
       _leading = _tabs[trainIndex].leading;
       _actions = widget.actions ?? _tabs[trainIndex].actions;
     });
-    if (sessionPanelController.isAttached && !sessionPanelController.isPanelClosed) {
-      sessionPanelController.close();
-      setState(() => _sessionPanelState = PanelState.CLOSED);
-    }
+    unawaited(_closeSessionPanel());
   }
 
   CommunitySection _normalizeCommunitySection(String? rawSection) {
@@ -554,14 +569,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
       _leading = _tabs[index].leading;
       _actions = widget.actions ?? (_tabs[index].id == 'community' ? _buildCommunityActions(context) : _tabs[index].actions);
     });
-    if (sessionPanelController.isAttached) {
-      if (!sessionPanelController.isPanelClosed) {
-        sessionPanelController.close();
-        setState(() {
-          _sessionPanelState = PanelState.CLOSED;
-        });
-      }
-    }
+    unawaited(_closeSessionPanel());
   }
 
   /// Shown for online-only tabs (Community, Learn, Me) when the device is offline.
@@ -705,7 +713,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     if (shouldClose == true) {
       sessionService.reset();
       await LocalNotificationService.cancelActiveSession();
-      await sessionPanelController.close();
+      await _closeSessionPanel();
     }
   }
 
@@ -737,7 +745,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
 
     if (shouldClose == true) {
       activeChallengeSession.value = null;
-      sessionPanelController.close();
+      unawaited(_closeSessionPanel());
     }
   }
 
@@ -745,13 +753,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     return Material(
       color: Theme.of(context).primaryColor,
       child: InkWell(
-        onTap: () {
-          if (sessionPanelController.isPanelClosed) {
-            sessionPanelController.open();
-          } else {
-            sessionPanelController.close();
-          }
-        },
+        onTap: _toggleSessionPanel,
         child: SizedBox(
           height: 74,
           child: Padding(
@@ -839,13 +841,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                 // Collapse/expand panel
                 InkWell(
                   borderRadius: BorderRadius.circular(20),
-                  onTap: () {
-                    if (sessionPanelController.isPanelClosed) {
-                      sessionPanelController.open();
-                    } else {
-                      sessionPanelController.close();
-                    }
-                  },
+                  onTap: _toggleSessionPanel,
                   child: Padding(
                     padding: const EdgeInsets.all(8),
                     child: Icon(
@@ -870,21 +866,39 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   // ── One-time historical trophy backfill check ─────────────────────────────
   Future<void> _checkTrophyBackfill() async {
     // Small delay so the UI has settled before we start loading sessions.
-    await Future<void>.delayed(const Duration(seconds: 3));
+    if (NetworkStatusService.isTestingOverride != true) {
+      await Future<void>.delayed(const Duration(seconds: 3));
+    }
     if (!mounted) return;
 
     final auth = Provider.of<FirebaseAuth>(context, listen: false);
     final uid = auth.currentUser?.uid;
     if (uid == null) return;
 
-    final level = await subscriptionLevel(context);
-    if (!mounted) return;
+    try {
+      final level = await subscriptionLevel(context);
+      if (!mounted) return;
 
-    await maybeShowBackfillSheet(
-      context,
-      userId: uid,
-      isPro: level == 'pro',
-    );
+      await maybeShowBackfillSheet(
+        context,
+        userId: uid,
+        isPro: level == 'pro',
+      );
+    } on FirebaseException catch (error, stackTrace) {
+      if (error.code != 'unavailable') {
+        ObservabilityService.recordError(
+          error,
+          stackTrace,
+          reason: 'Checking global trophy backfill',
+        );
+      }
+    } catch (error, stackTrace) {
+      ObservabilityService.recordError(
+        error,
+        stackTrace,
+        reason: 'Checking global trophy backfill',
+      );
+    }
   }
 
   // Load shared preferences
@@ -1202,15 +1216,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                           return Material(
                             color: Theme.of(context).primaryColor,
                             child: InkWell(
-                              onTap: () {
-                                if (sessionPanelController.isPanelClosed) {
-                                  sessionPanelController.open();
-                                  setState(() => _sessionPanelState = PanelState.OPEN);
-                                } else {
-                                  sessionPanelController.close();
-                                  setState(() => _sessionPanelState = PanelState.CLOSED);
-                                }
-                              },
+                              onTap: _toggleSessionPanel,
                               child: SizedBox(
                                 height: 74,
                                 child: Padding(
@@ -1307,15 +1313,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                                       // Collapse/expand panel
                                       InkWell(
                                         borderRadius: BorderRadius.circular(20),
-                                        onTap: () {
-                                          if (sessionPanelController.isPanelClosed) {
-                                            sessionPanelController.open();
-                                            setState(() => _sessionPanelState = PanelState.OPEN);
-                                          } else {
-                                            sessionPanelController.close();
-                                            setState(() => _sessionPanelState = PanelState.CLOSED);
-                                          }
-                                        },
+                                        onTap: _toggleSessionPanel,
                                         child: Padding(
                                           padding: const EdgeInsets.all(8),
                                           child: Icon(
@@ -1344,7 +1342,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
                       onDismiss: () {
                         final cb = activeChallengeSession.value?.onSessionComplete;
                         activeChallengeSession.value = null;
-                        sessionPanelController.close();
+                        unawaited(_closeSessionPanel());
                         cb?.call();
                       },
                     ),

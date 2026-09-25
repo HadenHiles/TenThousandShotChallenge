@@ -416,34 +416,21 @@ class _LoginState extends State<Login> {
                                                                           textStyle: const TextStyle(fontWeight: FontWeight.bold),
                                                                         ),
                                                                         child: const Text("Send reset email"),
-                                                                        onPressed: () {
+                                                                        onPressed: () async {
                                                                           if (_forgotPasswordFormKey.currentState!.validate()) {
-                                                                            FirebaseAuth.instance.sendPasswordResetEmail(email: _forgotPasswordEmail.text.toString()).then((value) {
-                                                                              _forgotPasswordEmail.text = "";
-
+                                                                            final email = _forgotPasswordEmail.text.trim();
+                                                                            try {
+                                                                              await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+                                                                              _forgotPasswordEmail.clear();
+                                                                              if (!mounted) return;
                                                                               Navigator.of(context, rootNavigator: true).pop('dialog');
                                                                               Navigator.of(context, rootNavigator: true).pop('dialog');
-
-                                                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                                                SnackBar(
-                                                                                  backgroundColor: Theme.of(context).cardTheme.color,
-                                                                                  content: Text(
-                                                                                    "Reset email link sent to ${_forgotPasswordEmail.text.toString()}",
-                                                                                    style: TextStyle(
-                                                                                      color: Theme.of(context).colorScheme.onPrimary,
-                                                                                    ),
-                                                                                  ),
-                                                                                  duration: const Duration(seconds: 10),
-                                                                                  action: SnackBarAction(
-                                                                                    label: "Dismiss",
-                                                                                    onPressed: () {
-                                                                                      // ignore: deprecated_member_use
-                                                                                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                                                                                    },
-                                                                                  ),
-                                                                                ),
-                                                                              );
-                                                                            });
+                                                                              await errorWithRootContext(this.context, "Reset email link sent to $email");
+                                                                            } on FirebaseAuthException catch (error) {
+                                                                              if (!mounted) return;
+                                                                              final message = error.code == 'user-not-found' ? 'No user found for that email' : 'Unable to send a reset email';
+                                                                              await errorWithRootContext(this.context, message);
+                                                                            }
                                                                           }
                                                                         },
                                                                       ),
@@ -688,22 +675,24 @@ class _LoginState extends State<Login> {
 
   // Helper to show SnackBar in root context
   Future<void> errorWithRootContext(BuildContext rootContext, String error) async {
-    ScaffoldMessenger.of(rootContext).hideCurrentSnackBar();
-    ScaffoldMessenger.of(rootContext).showSnackBar(
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    final theme = Theme.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
-        backgroundColor: Theme.of(rootContext).cardTheme.color,
+        backgroundColor: theme.cardTheme.color,
         content: Text(
           error,
           style: TextStyle(
-            color: Theme.of(rootContext).colorScheme.onPrimary,
+            color: theme.colorScheme.onPrimary,
           ),
         ),
         duration: const Duration(seconds: 10),
         action: SnackBarAction(
           label: "Dismiss",
-          onPressed: () {
-            ScaffoldMessenger.of(rootContext).hideCurrentSnackBar();
-          },
+          onPressed: messenger.hideCurrentSnackBar,
         ),
       ),
     );
@@ -722,7 +711,7 @@ class _LoginState extends State<Login> {
         SharedPreferences prefs = await SharedPreferences.getInstance();
 
         // Update/add the user's display name to firestore
-        firestore.collection('users').doc(auth.currentUser?.uid).set({
+        await firestore.collection('users').doc(auth.currentUser?.uid).set({
           'display_name_lowercase': auth.currentUser?.email?.toLowerCase(),
           'display_name': auth.currentUser?.email,
           'email': auth.currentUser?.email,
@@ -730,11 +719,11 @@ class _LoginState extends State<Login> {
           'is_pro': false,
           'subscription_level': 'free',
           'fcm_token': prefs.getString('fcm_token'),
-        }).then((value) => () {});
+        });
 
         if (auth.currentUser != null) {
-          AccountSwitcherService.saveAccount(auth.currentUser!, 'email');
-          AccountSwitcherService.cacheEmailCredentials(authAttempt.email, authAttempt.password, auth.currentUser!.uid);
+          await AccountSwitcherService.saveAccount(auth.currentUser!, 'email');
+          await AccountSwitcherService.cacheEmailCredentials(authAttempt.email, authAttempt.password, auth.currentUser!.uid);
         }
 
         if (context.mounted) {
@@ -742,7 +731,7 @@ class _LoginState extends State<Login> {
         }
 
         // Use context directly here, do not wrap in Builder
-        bootstrap(
+        await bootstrap(
           auth,
           firestore,
         );
@@ -776,11 +765,11 @@ class _LoginState extends State<Login> {
         await uDoc.get().then((u) async {
           SharedPreferences prefs = await SharedPreferences.getInstance();
           if (u.exists) {
-            u.reference.update({
+            await u.reference.update({
               'fcm_token': prefs.getString('fcm_token'),
-            }).then((value) => null);
+            });
           } else {
-            uDoc.set({
+            await uDoc.set({
               'display_name_lowercase': auth.currentUser?.email?.toLowerCase(),
               'display_name': auth.currentUser?.email,
               'email': auth.currentUser?.email,
@@ -788,13 +777,13 @@ class _LoginState extends State<Login> {
               'is_pro': false,
               'subscription_level': 'free',
               'fcm_token': prefs.getString('fcm_token'),
-            }).then((value) => null);
+            });
           }
         });
 
         if (auth.currentUser != null) {
-          AccountSwitcherService.saveAccount(auth.currentUser!, 'email');
-          AccountSwitcherService.cacheEmailCredentials(authAttempt.email, authAttempt.password, auth.currentUser!.uid);
+          await AccountSwitcherService.saveAccount(auth.currentUser!, 'email');
+          await AccountSwitcherService.cacheEmailCredentials(authAttempt.email, authAttempt.password, auth.currentUser!.uid);
         }
 
         // Use context directly here, do not wrap in Builder
@@ -838,10 +827,10 @@ class _LoginState extends State<Login> {
     final auth = Provider.of<FirebaseAuth>(context, listen: false);
     final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
     if (provider == 'google') {
-      signInWithGoogle().then((googleSignInAccount) async {
+      await signInWithGoogle().then((googleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         DocumentReference uDoc = firestore.collection('users').doc(auth.currentUser?.uid);
-        await uDoc.get().then((u) {
+        await uDoc.get().then((u) async {
           if (u.exists) {
             // Update FCM token. Only sync the Google photo_url if the user
             // hasn't already chosen a custom avatar (i.e. their stored photo
@@ -854,9 +843,9 @@ class _LoginState extends State<Login> {
             if (!hasCustomAvatar && (auth.currentUser?.photoURL ?? '').isNotEmpty) {
               updates['photo_url'] = auth.currentUser!.photoURL;
             }
-            u.reference.update(updates).then((value) => () {});
+            await u.reference.update(updates);
           } else {
-            uDoc.set({
+            await uDoc.set({
               'display_name_lowercase': auth.currentUser?.displayName?.toLowerCase(),
               'display_name': auth.currentUser?.displayName,
               'email': auth.currentUser?.email,
@@ -865,16 +854,16 @@ class _LoginState extends State<Login> {
               'is_pro': false,
               'subscription_level': 'free',
               'fcm_token': prefs.getString('fcm_token'),
-            }).then((value) => () {});
+            });
           }
         });
 
         if (auth.currentUser != null) {
-          AccountSwitcherService.saveAccount(auth.currentUser!, 'google');
+          await AccountSwitcherService.saveAccount(auth.currentUser!, 'google');
         }
 
         // Use context directly here, do not wrap in Builder
-        bootstrap(
+        await bootstrap(
           auth,
           firestore,
         );
@@ -886,19 +875,19 @@ class _LoginState extends State<Login> {
         }
         var message = "There was an error signing in with Google";
         print(e);
-        await error(message);
+        await errorWithRootContext(context, message);
       });
     } else if (provider == 'apple') {
-      signInWithApple(scopes: [Scope.email, Scope.fullName]).then((appleSignInAccount) async {
+      await signInWithApple(scopes: [Scope.email, Scope.fullName]).then((appleSignInAccount) async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         DocumentReference uDoc = firestore.collection('users').doc(auth.currentUser?.uid);
-        await uDoc.get().then((u) {
+        await uDoc.get().then((u) async {
           if (u.exists) {
-            u.reference.update({
+            await u.reference.update({
               'fcm_token': prefs.getString('fcm_token'),
-            }).then((value) => () {});
+            });
           } else {
-            uDoc.set({
+            await uDoc.set({
               'display_name_lowercase': auth.currentUser?.displayName?.toLowerCase(),
               'display_name': auth.currentUser?.displayName,
               'email': auth.currentUser?.email,
@@ -907,23 +896,23 @@ class _LoginState extends State<Login> {
               'is_pro': false,
               'subscription_level': 'free',
               'fcm_token': prefs.getString('fcm_token'),
-            }).then((value) => () {});
+            });
           }
         });
 
         if (auth.currentUser != null) {
-          AccountSwitcherService.saveAccount(auth.currentUser!, 'apple');
+          await AccountSwitcherService.saveAccount(auth.currentUser!, 'apple');
         }
 
         // Use context directly here, do not wrap in Builder
-        bootstrap(
+        await bootstrap(
           auth,
           firestore,
         );
       }).catchError((e) async {
         var message = "There was an error signing in with Apple";
         print(e);
-        await error(message);
+        await errorWithRootContext(context, message);
       });
     }
   }

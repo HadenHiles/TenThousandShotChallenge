@@ -1438,7 +1438,7 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
                                                 Provider.of<FirebaseAuth>(context, listen: false),
                                                 Provider.of<FirebaseFirestore>(context, listen: false),
                                               ).then((success) {
-                                                if (success!) {
+                                                if (success == true) {
                                                   ScaffoldMessenger.of(context).showSnackBar(
                                                     SnackBar(
                                                       backgroundColor: Theme.of(context).cardTheme.color,

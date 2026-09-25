@@ -188,6 +188,13 @@ class LocalNotificationService {
     final prefs = await SharedPreferences.getInstance();
     if (!(prefs.getBool('local_practice_reminders') ?? true)) return;
 
+    if (Platform.isIOS) {
+      final settings = await FirebaseMessaging.instance.getNotificationSettings();
+      if (settings.authorizationStatus == AuthorizationStatus.denied || settings.authorizationStatus == AuthorizationStatus.notDetermined) {
+        return;
+      }
+    }
+
     final now = tz.TZDateTime.now(tz.local);
     var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
     if (scheduled.isBefore(now)) scheduled = scheduled.add(const Duration(days: 1));
@@ -218,6 +225,8 @@ class LocalNotificationService {
           matchDateTimeComponents: DateTimeComponents.time,
           payload: 'train',
         );
+      } else if (Platform.isIOS && (e.code == 'Error 2003' || (e.message?.contains('not authorized') ?? false))) {
+        return;
       } else {
         rethrow;
       }
@@ -310,6 +319,7 @@ class LocalNotificationService {
   }
 
   static Future<void> cancelStreakAtRisk() async {
+    if (!_initialized) return;
     await _plugin.cancel(_streakAtRiskId);
   }
 

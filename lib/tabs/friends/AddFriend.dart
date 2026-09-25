@@ -263,7 +263,13 @@ class _AddFriendState extends State<AddFriend> {
                                       builder: (context) => const BarcodeScannerSimple(title: "Scan Friend's QR Code"),
                                     ),
                                   );
-                                  addFriendBarcode(barcodeScanRes, auth, db).then((success) {
+                                  if (!mounted || barcodeScanRes is! String || barcodeScanRes.isEmpty) return;
+                                  try {
+                                    final success = await addFriendBarcode(barcodeScanRes, auth, db);
+                                    if (!mounted) return;
+                                    if (success != true) {
+                                      throw StateError('Friend request was not accepted');
+                                    }
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
@@ -275,7 +281,8 @@ class _AddFriendState extends State<AddFriend> {
                                       ),
                                     );
                                     goToAppSection(context, AppSection.community, communitySection: CommunitySection.friends);
-                                  }).onError((error, stackTrace) {
+                                  } catch (_) {
+                                    if (!mounted) return;
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         backgroundColor: Theme.of(context).cardTheme.color,
@@ -286,7 +293,7 @@ class _AddFriendState extends State<AddFriend> {
                                         duration: const Duration(milliseconds: 4000),
                                       ),
                                     );
-                                  });
+                                  }
                                 },
                                 child: Padding(
                                   padding: const EdgeInsets.all(12),

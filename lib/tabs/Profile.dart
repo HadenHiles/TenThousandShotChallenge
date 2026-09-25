@@ -111,6 +111,7 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> _setInitialIterationId() async {
+    if (!mounted) return;
     final u = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
     if (u == null) return;
     final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
@@ -124,7 +125,7 @@ class _ProfileState extends State<Profile> {
   }
 
   Future<void> _loadFirstLastSession(String? iterationId) async {
-    if (iterationId == null || user == null) return;
+    if (!mounted || iterationId == null || user == null) return;
     if (_loadingSessionDates) return;
     setState(() => _loadingSessionDates = true);
     try {

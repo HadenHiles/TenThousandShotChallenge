@@ -17,7 +17,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 // import 'package:tenthousandshotchallenge/widgets/VideoStream.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class Explore extends StatefulWidget {
   const Explore({super.key});
@@ -255,14 +254,17 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
 
   void swapPageListener() {
     if (!mounted || _exploreScrollController == null || !_exploreScrollController!.hasClients) return;
-    if (_exploreScrollController!.offset > _exploreScrollController!.position.maxScrollExtent + 50) {
+    final positions = _exploreScrollController!.positions;
+    if (positions.length != 1) return;
+    final position = positions.single;
+    if (position.pixels > position.maxScrollExtent + 50) {
       _explorePageController.nextPage(
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeIn,
       );
     }
 
-    if (_exploreScrollController!.offset < _exploreScrollController!.position.minScrollExtent - 50) {
+    if (position.pixels < position.minScrollExtent - 50) {
       _explorePageController.previousPage(
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeIn,
@@ -1344,24 +1346,6 @@ class _ExploreVideoItem extends StatefulWidget {
 }
 
 class _ExploreVideoItemState extends State<_ExploreVideoItem> {
-  late YoutubePlayerController _ytController;
-
-  @override
-  void initState() {
-    _ytController = YoutubePlayerController.fromVideoId(
-      videoId: widget.video.id,
-      autoPlay: false,
-      params: const YoutubePlayerParams(mute: false),
-    );
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    _ytController.close();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     final v = widget.video;
@@ -1370,9 +1354,19 @@ class _ExploreVideoItemState extends State<_ExploreVideoItem> {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisSize: MainAxisSize.max,
       children: [
-        YoutubePlayer(
-          controller: _ytController,
+        AspectRatio(
           aspectRatio: 16 / 9,
+          child: InkWell(
+            onTap: () => launchUrlString('https://www.youtube.com/watch?v=${v.id}'),
+            child: Stack(
+              fit: StackFit.expand,
+              alignment: Alignment.center,
+              children: [
+                Image.network(v.thumbnail, fit: BoxFit.cover),
+                const Icon(Icons.play_circle_fill, color: Colors.white, size: 64),
+              ],
+            ),
+          ),
         ),
         Flexible(
           flex: 2,

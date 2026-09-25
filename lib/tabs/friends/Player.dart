@@ -212,76 +212,60 @@ class _PlayerState extends State<Player> {
   }
 
   void _showInviteDialog() {
-    if (_userPlayer == null || widget.uid == null) return;
+    if (_userPlayer == null || widget.uid == null || user == null) return;
+    final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
     Feedback.forTap(context);
 
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Text(
             "Invite ${_userPlayer!.notifName} to be your friend?",
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
+              color: Theme.of(dialogContext).colorScheme.onSurface,
               fontSize: 20,
             ),
           ),
-          backgroundColor: Theme.of(context).colorScheme.surface,
+          backgroundColor: Theme.of(dialogContext).colorScheme.surface,
           content: Text(
             "They will receive an invite notification from you.",
             style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
+              color: Theme.of(dialogContext).colorScheme.onSurface,
             ),
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
               },
               child: Text(
                 "Cancel",
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: Theme.of(dialogContext).colorScheme.onSurface,
                 ),
               ),
             ),
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                inviteFriend(user!.uid, widget.uid!, Provider.of<FirebaseFirestore>(context, listen: false)).then((success) {
-                  if (!mounted) return;
-                  if (success == true) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Theme.of(context).cardTheme.color,
-                        content: Text(
-                          "${_userPlayer!.notifName} Invited!",
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                        duration: const Duration(seconds: 4),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Theme.of(context).cardTheme.color,
-                        content: Text(
-                          "Failed to invite ${_userPlayer!.notifName} :(",
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                        duration: const Duration(seconds: 4),
-                      ),
-                    );
-                  }
-                });
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                final success = await inviteFriend(user!.uid, widget.uid!, firestore);
+                if (!mounted) return;
+                final theme = Theme.of(context);
+                ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+                  SnackBar(
+                    backgroundColor: theme.cardTheme.color,
+                    content: Text(
+                      success == true ? "${_userPlayer!.notifName} Invited!" : "Failed to invite ${_userPlayer!.notifName} :(",
+                      style: TextStyle(color: theme.colorScheme.onPrimary),
+                    ),
+                    duration: const Duration(seconds: 4),
+                  ),
+                );
               },
               child: Text(
                 "Invite",
-                style: TextStyle(color: Theme.of(context).primaryColor),
+                style: TextStyle(color: Theme.of(dialogContext).primaryColor),
               ),
             ),
           ],
@@ -541,83 +525,7 @@ class _PlayerState extends State<Player> {
                                     color: Theme.of(context).colorScheme.onSurface,
                                     size: 28,
                                   ),
-                                  onPressed: () {
-                                    Feedback.forTap(context);
-
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: Text(
-                                            "Invite ${_userPlayer!.notifName} to be your friend?",
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onSurface,
-                                              fontSize: 20,
-                                            ),
-                                          ),
-                                          backgroundColor: Theme.of(context).colorScheme.surface,
-                                          content: Text(
-                                            "They will receive an invite notification from you.",
-                                            style: TextStyle(
-                                              color: Theme.of(context).colorScheme.onSurface,
-                                            ),
-                                          ),
-                                          actions: [
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                              child: Text(
-                                                "Cancel",
-                                                style: TextStyle(
-                                                  color: Theme.of(context).colorScheme.onSurface,
-                                                ),
-                                              ),
-                                            ),
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                                Navigator.of(context).pop();
-                                                inviteFriend(user!.uid, widget.uid!, Provider.of<FirebaseFirestore>(context, listen: false)).then((success) {
-                                                  if (success!) {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        backgroundColor: Theme.of(context).cardTheme.color,
-                                                        content: Text(
-                                                          "${_userPlayer!.notifName} Invited!",
-                                                          style: TextStyle(
-                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                          ),
-                                                        ),
-                                                        duration: const Duration(seconds: 4),
-                                                      ),
-                                                    );
-                                                  } else {
-                                                    ScaffoldMessenger.of(context).showSnackBar(
-                                                      SnackBar(
-                                                        backgroundColor: Theme.of(context).cardTheme.color,
-                                                        content: Text(
-                                                          "Failed to invite ${_userPlayer!.notifName} :(",
-                                                          style: TextStyle(
-                                                            color: Theme.of(context).colorScheme.onPrimary,
-                                                          ),
-                                                        ),
-                                                        duration: const Duration(seconds: 4),
-                                                      ),
-                                                    );
-                                                  }
-                                                });
-                                              },
-                                              child: Text(
-                                                "Invite",
-                                                style: TextStyle(color: Theme.of(context).primaryColor),
-                                              ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    );
-                                  },
+                                  onPressed: _showInviteDialog,
                                 ),
                               )
                         : widget.uid == user!.uid
