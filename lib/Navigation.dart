@@ -44,6 +44,10 @@ import 'package:tenthousandshotchallenge/widgets/AccountSwitcherSheet.dart';
 
 final PanelController sessionPanelController = PanelController();
 
+// SlidingUpPanel never detaches from its controller, so a disposed owner leaves it pointing at a dead panel.
+_NavigationState? _sessionPanelOwner;
+final ValueNotifier<int> _sessionPanelOwnerDisposed = ValueNotifier<int>(0);
+
 /// Configuration for an active challenge session shown in the sliding panel.
 /// Set to non-null to activate challenge mode; null = normal shooting.
 class ChallengeSessionConfig {
@@ -111,7 +115,13 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     final user = auth.currentUser;
     if (user == null) return;
     final docRef = firestore.collection('users').doc(user.uid);
-    final doc = await docRef.get();
+    final DocumentSnapshot<Map<String, dynamic>> doc;
+    try {
+      doc = await docRef.get();
+    } on FirebaseException {
+      // Offline or signed out mid-request; retried on next launch.
+      return;
+    }
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     if (doc.exists) {
@@ -131,10 +141,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
         }
       }
     }
-    await docRef.update({'last_seen': now}).catchError((_) async {
-      // If doc doesn't exist, create it
-      await docRef.set({'last_seen': now}, SetOptions(merge: true));
-    });
+    await docRef.set({'last_seen': now}, SetOptions(merge: true)).catchError((Object _) {});
   }
 
   Future<void> ensureCurrentWeeklyAchievements() async {
@@ -158,6 +165,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   final ValueNotifier<int> _sessionPanelOpenSignal = ValueNotifier<int>(0);
   // State variables
   PanelState _sessionPanelState = PanelState.CLOSED;
+  Key _sessionPanelKey = UniqueKey();
   double _bottomNavOffsetPercentage = 0;
   Team? team;
   UserProfile? userProfile;
@@ -353,6 +361,18 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
     _crSessionTimer = null;
   }
 
+  void _onSessionPanelOwnerDisposed() {
+    // Defer: owners are disposed while the element tree is locked.
+    scheduleMicrotask(() {
+      if (!mounted || _sessionPanelOwner != null) return;
+      _sessionPanelOwner = this;
+      setState(() {
+        _sessionPanelKey = UniqueKey();
+        _sessionPanelState = PanelState.CLOSED;
+      });
+    });
+  }
+
   Future<void> _closeSessionPanel() async {
     if (!sessionPanelController.isAttached || sessionPanelController.isPanelAnimating || sessionPanelController.isPanelClosed) return;
     await sessionPanelController.close();
@@ -438,6 +458,8 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(this);
+    _sessionPanelOwner = this;
+    _sessionPanelOwnerDisposed.addListener(_onSessionPanelOwnerDisposed);
     sessionService.addListener(_onSessionChanged);
     activeChallengeSession.addListener(_onChallengeSessionChanged);
     openChallengerRoadSignal.addListener(_onOpenChallengerRoadSignal);
@@ -497,6 +519,11 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _sessionPanelOwnerDisposed.removeListener(_onSessionPanelOwnerDisposed);
+    if (_sessionPanelOwner == this) {
+      _sessionPanelOwner = null;
+      _sessionPanelOwnerDisposed.value++;
+    }
     _authTabSub?.cancel();
     sessionService.removeListener(_onSessionChanged);
     activeChallengeSession.removeListener(_onChallengeSessionChanged);
@@ -915,7 +942,8 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
 
     final user = Provider.of<FirebaseAuth>(context, listen: false).currentUser;
     if (user != null && preferences!.fcmToken != fcmToken) {
-      await getFirestore(context).collection('users').doc(user.uid).update({'fcm_token': fcmToken}).then((_) => null);
+      // The user doc may not exist yet (new sign-up) and writes don't resolve while offline.
+      unawaited(getFirestore(context).collection('users').doc(user.uid).update({'fcm_token': fcmToken}).catchError((Object _) {}));
     }
 
     preferences = Preferences(darkMode, puckCount, friendNotifications, targetDate, fcmToken);
@@ -1152,6 +1180,7 @@ class _NavigationState extends State<Navigation> with WidgetsBindingObserver {
       service: sessionService,
       child: Scaffold(
         body: SlidingUpPanel(
+          key: _sessionPanelKey,
           backdropEnabled: true,
           controller: sessionPanelController,
           maxHeight: () {

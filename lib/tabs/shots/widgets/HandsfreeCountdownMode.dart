@@ -78,21 +78,23 @@ class _HandsfreeCountdownModeState extends State<HandsfreeCountdownMode> with Si
     );
     _beepWavBytes = _generateBeepWav();
     // Allow audio to play alongside other apps, and override the iOS silent switch.
-    _audioPlayer.setAudioContext(
-      AudioContext(
-        iOS: AudioContextIOS(
-          category: AVAudioSessionCategory.playback,
-          options: const {AVAudioSessionOptions.mixWithOthers},
-        ),
-        android: const AudioContextAndroid(
-          isSpeakerphoneOn: true,
-          stayAwake: false,
-          contentType: AndroidContentType.sonification,
-          usageType: AndroidUsageType.assistanceSonification,
-          audioFocus: AndroidAudioFocus.none,
-        ),
-      ),
-    );
+    _audioPlayer
+        .setAudioContext(
+          AudioContext(
+            iOS: AudioContextIOS(
+              category: AVAudioSessionCategory.playback,
+              options: const {AVAudioSessionOptions.mixWithOthers},
+            ),
+            android: const AudioContextAndroid(
+              isSpeakerphoneOn: true,
+              stayAwake: false,
+              contentType: AndroidContentType.sonification,
+              usageType: AndroidUsageType.assistanceSonification,
+              audioFocus: AndroidAudioFocus.none,
+            ),
+          ),
+        )
+        .catchError((Object _) {});
   }
 
   @override
@@ -154,7 +156,8 @@ class _HandsfreeCountdownModeState extends State<HandsfreeCountdownMode> with Si
     if (!mounted || !_running) return;
 
     // Sound + haptic + visual pulse
-    _audioPlayer.play(BytesSource(_beepWavBytes));
+    // iOS writes bytes to an extensionless temp file, so AVPlayer needs the MIME type.
+    _audioPlayer.play(BytesSource(_beepWavBytes, mimeType: 'audio/wav')).catchError((Object _) {});
     HapticFeedback.heavyImpact();
     _pulseController.forward(from: 0).then((_) => _pulseController.reverse());
 

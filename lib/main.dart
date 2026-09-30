@@ -364,7 +364,9 @@ Future<void> _refreshFcmToken(FirebaseMessaging messaging, SharedPreferences? pr
       preferences?.fcmToken = token;
     }
   } catch (error, stackTrace) {
-    if (error is PlatformException && (error.message?.contains('TOO_MANY_REGISTRATIONS') ?? false)) {
+    // Device-level/transient failures (offline, GMS registration cap); retried on next launch.
+    if (error is TimeoutException) return;
+    if ((error is PlatformException || error is FirebaseException) && error.toString().contains('TOO_MANY_REGISTRATIONS')) {
       return;
     }
     _reportOptionalStartupError('FCM token', error, stackTrace);

@@ -32,11 +32,12 @@ class _PlayerSessionsScreenState extends State<PlayerSessionsScreen> {
   void initState() {
     super.initState();
     _selectedIterationId = widget.initialIterationId;
-    _getAttempts();
+    _getAttempts().catchError((Object _) {});
   }
 
   Future<void> _getAttempts() async {
     final snapshot = await FirebaseFirestore.instance.collection('iterations').doc(widget.userId).collection('iterations').orderBy('start_date', descending: false).get();
+    if (!mounted) return;
 
     final items = <DropdownMenuItem<String>>[];
     snapshot.docs.asMap().forEach((i, doc) {
@@ -53,14 +54,12 @@ class _PlayerSessionsScreenState extends State<PlayerSessionsScreen> {
       ));
     });
 
-    if (mounted) {
-      setState(() {
-        if (_selectedIterationId == null && items.isNotEmpty) {
-          _selectedIterationId = items.last.value;
-        }
-        _attemptDropdownItems = items;
-      });
-    }
+    setState(() {
+      if (_selectedIterationId == null && items.isNotEmpty) {
+        _selectedIterationId = items.last.value;
+      }
+      _attemptDropdownItems = items;
+    });
   }
 
   @override

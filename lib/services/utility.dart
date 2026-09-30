@@ -192,3 +192,13 @@ Color colorFromHex(String? hex, {Color fallback = const Color(0xffCC3333)}) {
 String colorToHex(Color color) {
   return '#${color.value.toRadixString(16).substring(2).toUpperCase()}';
 }
+
+/// Anchor rect for the iOS share sheet, which rejects a missing or zero-size origin.
+Rect shareOriginFor(BuildContext context) {
+  final box = context.findRenderObject();
+  if (box is RenderBox && box.hasSize && !box.size.isEmpty) {
+    return box.localToGlobal(Offset.zero) & box.size;
+  }
+  final screen = MediaQuery.sizeOf(context);
+  return Rect.fromCenter(center: screen.center(Offset.zero), width: 1, height: 1);
+}

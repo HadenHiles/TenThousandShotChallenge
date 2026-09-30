@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:tenthousandshotchallenge/services/utility.dart';
 
 /// A self-contained share card rendered off-screen via [ScreenshotController],
 /// then shared via the native share sheet.
@@ -18,6 +19,7 @@ Future<void> shareMilestone({
   required int totalShots,
   String? displayName,
 }) async {
+  final sharePositionOrigin = shareOriginFor(context);
   final controller = ScreenshotController();
 
   final Uint8List bytes = await controller.captureFromLongWidget(
@@ -38,9 +40,12 @@ Future<void> shareMilestone({
   final file = File('${dir.path}/milestone_${DateTime.now().millisecondsSinceEpoch}.png');
   await file.writeAsBytes(bytes);
 
-  await Share.shareXFiles(
-    [XFile(file.path)],
-    text: '${displayName != null ? "$displayName just " : "Just "}hit $title on #TenThousandShotChallenge 🏒',
+  await SharePlus.instance.share(
+    ShareParams(
+      files: [XFile(file.path, mimeType: 'image/png')],
+      text: '${displayName != null ? "$displayName just " : "Just "}hit $title on #TenThousandShotChallenge 🏒',
+      sharePositionOrigin: sharePositionOrigin,
+    ),
   );
 }
 

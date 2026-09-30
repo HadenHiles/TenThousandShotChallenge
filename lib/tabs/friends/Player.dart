@@ -61,29 +61,33 @@ class _PlayerState extends State<Player> {
     });
 
     FirebaseFirestore.instance.collection('users').doc(widget.uid).get().then((uDoc) {
+      if (!mounted) return;
       _userPlayer = UserProfile.fromSnapshot(uDoc);
-      _loadPlayerTeamVisibility();
+      _loadPlayerTeamVisibility().catchError((Object _) {});
 
       setState(() {
         _loadingPlayer = false;
       });
+    }).catchError((Object _) {
+      if (mounted) setState(() => _loadingPlayer = false);
     });
 
-    _loadIsFriend();
-    _loadFriendSubscription();
-    _getAttempts();
+    _loadIsFriend().catchError((Object _) {});
+    _loadFriendSubscription().catchError((Object _) {});
+    _getAttempts().catchError((Object _) {});
   }
 
   Future<void> _loadIsFriend() async {
-    await FirebaseFirestore.instance.collection('teammates').doc(user!.uid).collection('teammates').doc(widget.uid).get().then((snapshot) {
-      setState(() {
-        _isFriend = snapshot.exists;
-      });
+    if (user == null) return;
+    final snapshot = await FirebaseFirestore.instance.collection('teammates').doc(user!.uid).collection('teammates').doc(widget.uid).get();
+    if (!mounted) return;
+    setState(() {
+      _isFriend = snapshot.exists;
     });
   }
 
   Future<void> _loadFriendSubscription() async {
-    if (widget.uid == null || widget.uid == user!.uid) return;
+    if (user == null || widget.uid == null || widget.uid == user!.uid) return;
     final doc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).collection('friend_subscriptions').doc(widget.uid).get();
     if (mounted) {
       setState(() {
@@ -392,6 +396,7 @@ class _PlayerState extends State<Player> {
 
   Future<void> _getAttempts() async {
     await FirebaseFirestore.instance.collection('iterations').doc(widget.uid).collection('iterations').orderBy('start_date', descending: false).get().then((snapshot) {
+      if (!mounted) return;
       List<DropdownMenuItem> iterations = [];
       snapshot.docs.asMap().forEach((i, iDoc) {
         iterations.add(DropdownMenuItem<String>(

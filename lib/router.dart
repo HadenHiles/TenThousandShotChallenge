@@ -361,7 +361,7 @@ List<RouteBase> _buildTrainRoutes() {
           body: ChallengerRoadMapView(
             userId: userId,
             isPreviewMode: true,
-            onCloseTap: () => context.pop(),
+            onCloseTap: () => context.canPop() ? context.pop() : context.go(AppRoutePaths.app),
             onPreviewLevelUnlockAttempted: () => presentPaywallIfNeeded(context),
           ),
         );

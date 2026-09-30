@@ -138,6 +138,7 @@ class _AddFriendState extends State<AddFriend> {
                           SharePlus.instance.share(ShareParams(
                             text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
                             subject: 'Take the How To Hockey 10,000 Shot Challenge!',
+                            sharePositionOrigin: shareOriginFor(context),
                           ));
                         },
                         icon: Icon(Icons.share, size: 28, color: Theme.of(context).colorScheme.onPrimary),
@@ -216,20 +217,25 @@ class _AddFriendState extends State<AddFriend> {
                                     setState(() => _isSearching = true);
 
                                     List<DocumentSnapshot> users = [];
-                                    await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
-                                          for (var uDoc in uSnaps.docs) {
-                                            if (uDoc.reference.id != user!.uid) users.add(uDoc);
-                                          }
-                                        });
-                                    if (users.isEmpty) {
-                                      await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
+                                    try {
+                                      await FirebaseFirestore.instance.collection('users').orderBy('display_name_lowercase', descending: false).orderBy('display_name', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
                                             for (var uDoc in uSnaps.docs) {
                                               if (uDoc.reference.id != user!.uid) users.add(uDoc);
                                             }
                                           });
+                                      if (users.isEmpty) {
+                                        await FirebaseFirestore.instance.collection('users').orderBy('email', descending: false).where('public', isEqualTo: true).startAt([value.toLowerCase()]).endAt(['${value.toLowerCase()}\uf8ff']).get().then((uSnaps) async {
+                                              for (var uDoc in uSnaps.docs) {
+                                                if (uDoc.reference.id != user!.uid) users.add(uDoc);
+                                              }
+                                            });
+                                      }
+                                    } on FirebaseException {
+                                      users = [];
                                     }
 
                                     await Future.delayed(const Duration(milliseconds: 500));
+                                    if (!mounted) return;
 
                                     setState(() {
                                       _friends = users;
@@ -348,6 +354,7 @@ class _AddFriendState extends State<AddFriend> {
                   SharePlus.instance.share(ShareParams(
                     text: 'Take the How To Hockey 10,000 Shot Challenge!\nhttp://hyperurl.co/tenthousandshots',
                     subject: 'Take the How To Hockey 10,000 Shot Challenge!',
+                    sharePositionOrigin: shareOriginFor(context),
                   ));
                 },
                 style: ElevatedButton.styleFrom(

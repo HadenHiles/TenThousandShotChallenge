@@ -155,15 +155,20 @@ class _PlayerIdentityHeader extends StatelessWidget {
         final rawName = (profile?.nickname?.trim().isNotEmpty == true) ? profile!.nickname! : profile?.displayName ?? '';
         final displayName = rawName.isNotEmpty ? rawName : 'Player';
         final photoUrl = profile?.photoUrl;
+        final ImageProvider? avatarImage = photoUrl == null || photoUrl.isEmpty
+            ? null
+            : photoUrl.startsWith('http')
+                ? NetworkImage(photoUrl) as ImageProvider
+                : AssetImage(photoUrl);
         return Padding(
           padding: const EdgeInsets.fromLTRB(0, 20, 0, 0),
           child: Column(
             children: [
               CircleAvatar(
                 radius: 36,
-                backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                backgroundImage: avatarImage,
                 backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.15),
-                child: photoUrl == null
+                child: avatarImage == null
                     ? Text(
                         displayName[0].toUpperCase(),
                         style: TextStyle(

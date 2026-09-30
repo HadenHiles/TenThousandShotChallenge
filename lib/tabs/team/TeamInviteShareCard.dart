@@ -14,8 +14,7 @@ import 'package:tenthousandshotchallenge/tabs/team/TeamIdentityPicker.dart';
 Future<void> shareTeamInvite(BuildContext context, Team team) async {
   final teamName = team.name ?? 'Our Team';
   final teamCode = team.code ?? '';
-  final renderBox = context.findRenderObject() as RenderBox?;
-  final sharePositionOrigin = renderBox == null ? null : renderBox.localToGlobal(Offset.zero) & renderBox.size;
+  final sharePositionOrigin = shareOriginFor(context);
 
   final controller = ScreenshotController();
 
