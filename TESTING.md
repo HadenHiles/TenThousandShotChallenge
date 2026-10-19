@@ -89,6 +89,27 @@ dart test/scripts/run_complete_test_suite.dart --verbose
 - Use the VS Code test runner for quick feedback on unit/widget tests.
 - For advanced scenarios, see comments in the relevant scripts.
 
+## iOS Connectivity Lifecycle Regression
+
+Crashlytics issue `70aabed98e2aeac09963b50d82990a2e` affected
+3.0.10 (42) while backgrounded, including iOS apps running on macOS.
+`connectivity_plus` 6.1.5 could deliver an `NWPathMonitor` update to a torn-down
+Flutter engine. Keep the dependency at 7.3.0 or newer, which gates native
+connectivity events while backgrounded instead of messaging an unavailable engine.
+
+Use an emulator-configured build, not production services:
+
+1. Open the app and verify connectivity changes still trigger offline-session sync.
+2. Background the app, change network connectivity, and return to the app.
+3. Repeat while closing and reopening the Flutter scene, including on an Apple
+   Silicon Mac running the iOS app when available.
+4. Confirm there is no `NSInternalInconsistencyException` with
+   `Sending a message before the FlutterEngine has been run.`, and verify
+   queued sessions sync when connectivity is restored in the foreground.
+
+Flutter unit tests cannot exercise the native engine-teardown race; include
+this lifecycle check when validating connectivity dependency changes.
+
 ---
 
 ## Copilot Rules & Guidelines
