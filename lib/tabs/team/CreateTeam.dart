@@ -219,7 +219,10 @@ class _CreateTeamState extends State<CreateTeam> {
       if (!userProfile.teamIds.contains(_team!.id)) {
         userProfile.teamIds.add(_team!.id!);
       }
-      await uDoc.reference.set(userProfile.toMap());
+      await uDoc.reference.update({
+        'team_ids': userProfile.teamIds,
+        'team_id': userProfile.teamIds.isNotEmpty ? userProfile.teamIds.first : null,
+      });
       await FirebaseFirestore.instance.collection('teams').doc(_team!.id).update({
         'players': [user!.uid]
       });

@@ -502,6 +502,7 @@ Future<void> initRevenueCat(String? appUserID) async {
 
   if (configuration != null) {
     configuration.appUserID = appUserID;
+    configuration.entitlementVerificationMode = EntitlementVerificationMode.informational;
     try {
       await Purchases.configure(configuration);
       RevenueCatConfig.configured = true;

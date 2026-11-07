@@ -513,8 +513,12 @@ Future<bool> joinTeam(String teamId, FirebaseAuth auth, FirebaseFirestore firest
         if (!user.teamIds.contains(team.id)) {
           user.teamIds.add(team.id!);
         }
-        // toMap() writes both team_ids (new) and team_id (legacy compat)
-        return await u.reference.set(user.toMap()).then((value) => true).onError((error, stackTrace) => false);
+        // Write both team_ids (new) and team_id (legacy compat). Only these fields are
+        // updated so server-managed subscription fields are never overwritten.
+        return await u.reference.update({
+          'team_ids': user.teamIds,
+          'team_id': user.teamIds.isNotEmpty ? user.teamIds.first : null,
+        }).then((value) => true).onError((error, stackTrace) => false);
       });
     }).onError((error, stackTrace) => false);
   });

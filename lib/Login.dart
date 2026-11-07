@@ -716,10 +716,8 @@ class _LoginState extends State<Login> {
           'display_name': auth.currentUser?.email,
           'email': auth.currentUser?.email,
           'photo_url': null,
-          'is_pro': false,
-          'subscription_level': 'free',
           'fcm_token': prefs.getString('fcm_token'),
-        });
+        }, SetOptions(merge: true));
 
         if (auth.currentUser != null) {
           await AccountSwitcherService.saveAccount(auth.currentUser!, 'email');

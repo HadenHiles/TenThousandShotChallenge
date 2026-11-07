@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import { onRequest, onCall, HttpsError } from "firebase-functions/v2/https";
-import { onDocumentCreated, onDocumentUpdated, onDocumentDeleted } from "firebase-functions/v2/firestore";
+import { onDocumentCreated, onDocumentUpdated, onDocumentDeleted, onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions";
@@ -102,6 +102,30 @@ function requireAdminKey(req: any, res: any): boolean {
     }
     return true;
 }
+
+/**
+ * Mirrors the RevenueCat Firestore extension's `entitlements` map into the
+ * `is_pro` / `subscription_level` fields. Clients cannot write any of these
+ * (see firestore.rules), so they reflect server-verified subscription state.
+ */
+export const syncProStatus = onDocumentWritten({ document: "users/{userId}" }, async (event) => {
+    const after = event.data?.after;
+    if (!after?.exists) return;
+
+    const data = after.data() || {};
+    const entitlements = data.entitlements && typeof data.entitlements === 'object' ? data.entitlements : {};
+    const now = new Date();
+    const isPro = Object.values(entitlements).some((ent: any) => {
+        if (!ent || typeof ent !== 'object') return false;
+        if (ent.expires_date == null) return true; // lifetime/non-expiring
+        const expires = new Date(ent.expires_date);
+        return !isNaN(expires.getTime()) && expires > now;
+    });
+    const level = isPro ? 'pro' : 'free';
+
+    if (data.is_pro === isPro && data.subscription_level === level) return;
+    await after.ref.update({ is_pro: isPro, subscription_level: level });
+});
 
 /**
  * Returns the preferred display name for notifications.
