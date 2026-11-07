@@ -10,14 +10,19 @@ service cloud.firestore {
     }
 
     // is_pro, subscription_level and entitlements are server-managed (RevenueCat
-    // Firestore extension + syncProStatus function); clients may not change them.
+    // Firestore extension + syncProStatus function). Clients may not grant
+    // themselves pro access. Removing/resetting them is still allowed so that
+    // older app versions that overwrite the whole user doc keep working.
     function subscriptionFieldsUntouched() {
+      let incoming = request.resource.data;
       return request.method == 'create'
-        ? (request.resource.data.get('is_pro', false) == false
-            && request.resource.data.get('subscription_level', 'free') == 'free'
-            && !('entitlements' in request.resource.data))
-        : !request.resource.data.diff(resource.data).affectedKeys()
-            .hasAny(['is_pro', 'subscription_level', 'entitlements']);
+        ? (incoming.get('is_pro', false) == false
+            && incoming.get('subscription_level', 'free') == 'free'
+            && !('entitlements' in incoming))
+        : ((incoming.get('is_pro', false) != true || resource.data.get('is_pro', false) == true)
+            && (incoming.get('subscription_level', 'free') != 'pro' || resource.data.get('subscription_level', 'free') == 'pro')
+            && (!('entitlements' in incoming)
+                || ('entitlements' in resource.data && incoming.entitlements == resource.data.entitlements)));
     }
 
     match /users {
