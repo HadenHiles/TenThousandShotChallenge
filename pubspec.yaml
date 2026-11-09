@@ -106,6 +106,7 @@ flutter:
     - assets/images/avatars/players/
     - assets/images/avatars/characters/
     - assets/images/shop/
+    - assets/images/team_badges/
     - assets/images/trophies/
     - assets/fonts/
     - assets/animations/

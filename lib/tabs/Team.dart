@@ -17,6 +17,11 @@ import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
 import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/models/firestore/Team.dart';
 import 'package:tenthousandshotchallenge/models/firestore/UserProfile.dart';
+import 'package:tenthousandshotchallenge/models/TeamBadge.dart';
+import 'package:tenthousandshotchallenge/services/TeamBadgeService.dart';
+import 'package:tenthousandshotchallenge/tabs/team/TeamBadgeAwardSheet.dart';
+import 'package:tenthousandshotchallenge/tabs/team/TeamBadgeBoard.dart';
+import 'package:tenthousandshotchallenge/tabs/team/TeamBadgeStrip.dart';
 import 'package:tenthousandshotchallenge/services/firestore.dart';
 import 'package:tenthousandshotchallenge/services/utility.dart';
 import 'package:tenthousandshotchallenge/tabs/shots/widgets/CustomDialogs.dart';
@@ -191,6 +196,19 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
   // keeps its subscription across user-profile rebuilds.
   String? _cachedTeamStreamId;
   Stream<DocumentSnapshot<Map<String, dynamic>>>? _cachedTeamStream;
+
+  // Shared by the player list and the award sheet so each team is only queried once.
+  String? _cachedAwardsTeamId;
+  Stream<TeamBadgeAwards>? _cachedAwardsStream;
+
+  Stream<TeamBadgeAwards> _stableAwardsStream(String teamId) {
+    if (teamId != _cachedAwardsTeamId || _cachedAwardsStream == null) {
+      _cachedAwardsTeamId = teamId;
+      final service = TeamBadgeService(firestore: Provider.of<FirebaseFirestore>(context, listen: false));
+      _cachedAwardsStream = service.watchAwards(teamId).shareReplay(maxSize: 1);
+    }
+    return _cachedAwardsStream!;
+  }
 
   Stream<DocumentSnapshot<Map<String, dynamic>>> _stableTeamStream(String teamId) {
     if (teamId != _cachedTeamStreamId || _cachedTeamStream == null) {
@@ -924,53 +942,57 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                                     ],
                                   ),
                                 ),
-                                Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text("Progress".toUpperCase(), style: TextStyle(color: teamPrimaryColor, fontSize: 22, fontFamily: 'NovecentoSans'))]),
-                                const SizedBox(height: 5),
-                                Column(children: [
-                                  Container(
-                                    width: (MediaQuery.of(context).size.width),
+                                Tooltip(
+                                  message: "${numberFormat.format(currentTeamTotalShots)} Shots".toLowerCase(),
+                                  child: Container(
+                                    height: 26,
                                     margin: const EdgeInsets.symmetric(horizontal: 30),
-                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(20), color: _teamAccentShade(context).withValues(alpha: 0.45)),
+                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(13), color: _teamAccentShade(context).withValues(alpha: 0.45)),
                                     clipBehavior: Clip.antiAlias,
-                                    child: Row(children: [
-                                      Tooltip(
-                                        message: "${numberFormat.format(currentTeamTotalShots)} Shots".toLowerCase(),
-                                        textStyle: TextStyle(fontFamily: "NovecentoSans", fontSize: 20, color: Theme.of(context).colorScheme.onPrimary),
-                                        decoration: BoxDecoration(color: Theme.of(context).colorScheme.primaryContainer),
-                                        child: Container(height: 40, width: currentTeamTotalShots > 0 ? totalShotsWidth : 0, decoration: BoxDecoration(color: teamPrimaryColor)),
+                                    child: Stack(alignment: Alignment.center, children: [
+                                      Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Container(width: currentTeamTotalShots > 0 ? totalShotsWidth : 0, decoration: BoxDecoration(color: teamPrimaryColor)),
+                                      ),
+                                      Text(
+                                        "${numberFormat.format(currentTeamTotalShots)} / ${numberFormat.format(safeGoalTotal)}",
+                                        style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 17, color: Colors.white, shadows: [Shadow(offset: const Offset(0, 1), blurRadius: 2, color: Colors.black.withValues(alpha: 0.6))]),
                                       ),
                                     ]),
                                   ),
-                                  Container(
-                                    width: (MediaQuery.of(context).size.width - 30),
-                                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(20)),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: Row(children: [
-                                      Container(
-                                        height: 40,
-                                        width: totalShotsWidth < 35
-                                            ? 50
-                                            : totalShotsWidth > (MediaQuery.of(context).size.width - 110)
-                                                ? totalShotsWidth - 175
-                                                : totalShotsWidth,
-                                        padding: const EdgeInsets.symmetric(horizontal: 2),
-                                        child: AutoSizeText(numberFormat.format(currentTeamTotalShots), textAlign: TextAlign.right, maxFontSize: 18, maxLines: 1, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
-                                      ),
-                                      Text(" / ${numberFormat.format(safeGoalTotal)}", textAlign: TextAlign.right, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 18, color: Theme.of(context).colorScheme.onPrimary)),
-                                    ]),
+                                ),
+                                const SizedBox(height: 8),
+                                if (currentPlayers.isNotEmpty)
+                                  TeamBadgeBoard(
+                                    teamId: team.id!,
+                                    awards: _stableAwardsStream(team.id!),
+                                    isCoach: isCurrentUserOwner,
+                                    coachId: team.ownerId,
+                                    accentColor: teamPrimaryColor,
+                                    players: [
+                                      for (final p in currentPlayers)
+                                        if ((p.profile?.reference?.id ?? '').isNotEmpty && p.profile?.displayName != 'Deleted User')
+                                          TeamBadgePlayer(id: p.profile!.reference!.id, name: p.profile?.displayName ?? 'Player', photoUrl: p.profile?.photoUrl),
+                                    ],
                                   ),
-                                ]),
-                                const SizedBox(height: 5),
+                                const SizedBox(height: 4),
                                 currentPlayers.isEmpty
                                     ? _buildNoPlayersOnTeamUI(team)
-                                    : ListView.builder(
-                                        padding: const EdgeInsets.all(0),
-                                        shrinkWrap: true,
-                                        physics: const NeverScrollableScrollPhysics(),
-                                        itemCount: currentPlayers.length,
-                                        itemBuilder: (_, int index) {
-                                          final Plyr p = currentPlayers[index];
-                                          return _buildPlayerItem(p, index % 2 == 0, index + 1, team, isCurrentUserOwner);
+                                    : StreamBuilder<TeamBadgeAwards>(
+                                        stream: _stableAwardsStream(team.id!),
+                                        initialData: TeamBadgeAwards.empty,
+                                        builder: (context, awardsSnapshot) {
+                                          final awards = awardsSnapshot.data ?? TeamBadgeAwards.empty;
+                                          return ListView.builder(
+                                            padding: const EdgeInsets.all(0),
+                                            shrinkWrap: true,
+                                            physics: const NeverScrollableScrollPhysics(),
+                                            itemCount: currentPlayers.length,
+                                            itemBuilder: (_, int index) {
+                                              final Plyr p = currentPlayers[index];
+                                              return _buildPlayerItem(p, index % 2 == 0, index + 1, team, isCurrentUserOwner, awards);
+                                            },
+                                          );
                                         },
                                       ),
                                 if (isCurrentUserOwner)
@@ -1286,7 +1308,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     ]);
   }
 
-  Widget _buildPlayerItem(Plyr plyr, bool bg, int place, Team currentTeam, bool isCurrentUserOwner) {
+  Widget _buildPlayerItem(Plyr plyr, bool bg, int place, Team currentTeam, bool isCurrentUserOwner, TeamBadgeAwards awards) {
     final String playerUid = plyr.profile?.reference?.id ?? "";
     final bool isDeletedUser = plyr.profile?.displayName == "Deleted User";
     // Removed unused local variables for firestore/auth
@@ -1332,9 +1354,9 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
                   color: colorFromHex(_currentTeam?.primaryColor),
                   padding: const EdgeInsets.symmetric(horizontal: 15),
                   child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text("Delete".toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 16, color: Colors.white)), const Icon(Icons.delete, size: 16, color: Colors.white)])),
-              child: _buildPlayerListItemContent(plyr, bg, place, isDeletedUser),
+              child: _buildPlayerListItemContent(plyr, bg, place, isDeletedUser, awards),
             )
-          : _buildPlayerListItemContent(plyr, bg, place, isDeletedUser),
+          : _buildPlayerListItemContent(plyr, bg, place, isDeletedUser, awards),
     );
   }
 
@@ -1364,8 +1386,10 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildPlayerListItemContent(Plyr plyr, bool bg, int place, bool isDeletedUser) {
+  Widget _buildPlayerListItemContent(Plyr plyr, bool bg, int place, bool isDeletedUser, TeamBadgeAwards awards) {
     final bool isProForDisplay = plyr.profile?.isPro == true;
+    final String rowPlayerId = plyr.profile?.reference?.id ?? '';
+    final bool canAwardBadges = _currentTeam?.ownerId == user?.uid && !isDeletedUser && rowPlayerId.isNotEmpty && rowPlayerId != user?.uid;
     // Raw photo URL from profile (can be network URL, asset path, or an unintended file URI)
     final String? rawPhotoUrl = plyr.profile?.photoUrl;
     String? photoUrl = rawPhotoUrl;
@@ -1479,6 +1503,21 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
               extraActions: isDeletedUser || (plyr.profile?.reference?.id ?? '').isEmpty || (plyr.profile?.reference?.id == user?.uid)
                   ? const <UserAvatarPopoverAction>[]
                   : [
+                      if (canAwardBadges)
+                        UserAvatarPopoverAction(
+                          label: 'Award Badge',
+                          icon: Icons.military_tech_outlined,
+                          onTap: () {
+                            Feedback.forTap(context);
+                            showTeamBadgeAwardSheet(
+                              context,
+                              teamId: _currentTeam!.id!,
+                              playerId: rowPlayerId,
+                              playerName: plyr.profile?.displayName ?? 'Player',
+                              awards: _stableAwardsStream(_currentTeam!.id!),
+                            );
+                          },
+                        ),
                       UserAvatarPopoverAction(
                         label: 'Compare Stats',
                         icon: Icons.compare_arrows_rounded,
@@ -1547,6 +1586,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
             ),
           ],
         ),
+        subtitle: isDeletedUser || awards.heldBy(rowPlayerId).isEmpty ? null : TeamBadgeStrip(counts: awards.heldBy(rowPlayerId)),
         title: Text(
           displayName,
           style: TextStyle(

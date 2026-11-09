@@ -127,6 +127,73 @@ export const syncProStatus = onDocumentWritten({ document: "users/{userId}" }, a
     await after.ref.update({ is_pro: isPro, subscription_level: level });
 });
 
+// Keep ids and the free flag in sync with teamBadges in lib/models/TeamBadge.dart.
+const TEAM_BADGES: { [id: string]: { free: boolean } } = {
+    hardest_worker: { free: true },
+    great_teammate: { free: false },
+    never_gave_up: { free: false },
+    leadership: { free: false },
+    great_attitude: { free: false },
+};
+const SAFE_ID = /^[A-Za-z0-9_-]{1,128}$/;
+const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Lets a team's coach (owner) award, or take back, a character badge for one
+ * player. Each badge can go to one player per day (a deterministic id enforces it). Only Pro coaches can give non-free badges.
+ */
+export const awardTeamBadge = onCall(async (req) => {
+    const uid = req.auth?.uid;
+    if (!uid) throw new HttpsError('unauthenticated', 'Sign in to award badges.');
+
+    const { teamId, playerId, badgeId, day, remove } = req.data || {};
+    if (![teamId, playerId, badgeId].every((v) => typeof v === 'string' && SAFE_ID.test(v))) {
+        throw new HttpsError('invalid-argument', 'Invalid team, player or badge.');
+    }
+    const badge = TEAM_BADGES[badgeId];
+    if (!badge) throw new HttpsError('invalid-argument', 'Unknown badge.');
+    // The app sends the coach's local date, so allow a day of timezone slack.
+    const dayMs = typeof day === 'string' && DAY_PATTERN.test(day) ? Date.parse(`${day}T00:00:00Z`) : NaN;
+    if (isNaN(dayMs) || Math.abs(dayMs - Date.now()) > 2 * 24 * 60 * 60 * 1000) {
+        throw new HttpsError('invalid-argument', 'Invalid day.');
+    }
+
+    const teamSnap = await db.collection('teams').doc(teamId).get();
+    const team = teamSnap.data();
+    if (!teamSnap.exists || !team) throw new HttpsError('not-found', 'Team not found.');
+    if (team.owner_id !== uid) throw new HttpsError('permission-denied', 'Only the team coach can award badges.');
+    if (playerId === uid) throw new HttpsError('failed-precondition', 'Coaches cannot award badges to themselves.');
+    if (!Array.isArray(team.players) || !team.players.includes(playerId)) {
+        throw new HttpsError('failed-precondition', 'That player is not on this team.');
+    }
+
+    // One slot per team, badge and day: giving it to another player the same
+    // day moves it, and it stays with that player until it is given elsewhere.
+    const awardRef = db.collection('team_badge_awards').doc(`${teamId}_${badgeId}_${day}`);
+    if (remove === true) {
+        const existing = await awardRef.get();
+        if (existing.exists && existing.data()?.player_id === playerId) await awardRef.delete();
+        return { success: true };
+    }
+
+    if (!badge.free) {
+        const coachSnap = await db.collection('users').doc(uid).get();
+        if (coachSnap.data()?.is_pro !== true) {
+            throw new HttpsError('permission-denied', 'This badge needs a Pro subscription.');
+        }
+    }
+
+    await awardRef.set({
+        team_id: teamId,
+        player_id: playerId,
+        badge_id: badgeId,
+        day,
+        awarded_by: uid,
+        created_at: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    return { success: true };
+});
+
 /**
  * Returns the preferred display name for notifications.
  * Uses the user's `nickname` field if set; otherwise falls back to the first
