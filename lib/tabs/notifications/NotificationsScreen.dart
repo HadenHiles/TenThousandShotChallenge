@@ -248,6 +248,8 @@ class _NotificationTile extends StatelessWidget {
         } else {
           context.push(AppRoutePaths.profileChallengerRoad);
         }
+      } else if (n.isTeamBadgeAwarded) {
+        context.go(AppRoutePaths.app);
       } else if (n.isLevelCompleted) {
         // Navigate back to the shell first, then signal Train tab to open the road.
         context.go(AppRoutePaths.app);
@@ -302,6 +304,12 @@ class _NotificationTile extends StatelessWidget {
       avatarFg = Colors.amber[800]!;
       avatarIcon = Icons.military_tech_rounded;
       headline = 'New badge earned!';
+      subtitleLine = n.trophyName;
+    } else if (n.isTeamBadgeAwarded) {
+      avatarBg = Colors.amber.withValues(alpha: 0.18);
+      avatarFg = Colors.amber[800]!;
+      avatarIcon = Icons.military_tech_rounded;
+      headline = '${n.fromName} awarded you a team badge!';
       subtitleLine = n.trophyName;
     } else if (n.isLevelCompleted) {
       avatarBg = Theme.of(context).primaryColor.withValues(alpha: 0.15);

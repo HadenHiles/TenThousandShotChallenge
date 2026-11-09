@@ -128,12 +128,12 @@ export const syncProStatus = onDocumentWritten({ document: "users/{userId}" }, a
 });
 
 // Keep ids and the free flag in sync with teamBadges in lib/models/TeamBadge.dart.
-const TEAM_BADGES: { [id: string]: { free: boolean } } = {
-    hardest_worker: { free: true },
-    great_teammate: { free: false },
-    never_gave_up: { free: false },
-    leadership: { free: false },
-    great_attitude: { free: false },
+const TEAM_BADGES: { [id: string]: { free: boolean; title: string } } = {
+    hardest_worker: { free: true, title: 'Hardest Worker' },
+    great_teammate: { free: false, title: 'Great Teammate' },
+    never_gave_up: { free: false, title: 'Never Gave Up' },
+    leadership: { free: false, title: 'Leadership' },
+    great_attitude: { free: false, title: 'Great Attitude' },
 };
 const SAFE_ID = /^[A-Za-z0-9_-]{1,128}$/;
 const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -183,6 +183,7 @@ export const awardTeamBadge = onCall(async (req) => {
         }
     }
 
+    const alreadyAwarded = (await awardRef.get()).data()?.player_id === playerId;
     await awardRef.set({
         team_id: teamId,
         player_id: playerId,
@@ -191,8 +192,113 @@ export const awardTeamBadge = onCall(async (req) => {
         awarded_by: uid,
         created_at: admin.firestore.FieldValue.serverTimestamp(),
     });
+
+    // Tapping the same player again must not notify them twice.
+    if (!alreadyAwarded) {
+        try {
+            await notifyBadgeAwarded({ coachId: uid, playerId, badgeId, badgeTitle: badge.title, teamName: team.name ?? 'your team' });
+        } catch (err) {
+            logger.error('Error notifying player of team badge:', err);
+        }
+    }
     return { success: true };
 });
+
+async function notifyBadgeAwarded(args: { coachId: string; playerId: string; badgeId: string; badgeTitle: string; teamName: string }): Promise<void> {
+    const [coachSnap, playerSnap] = await Promise.all([
+        db.collection('users').doc(args.coachId).get(),
+        db.collection('users').doc(args.playerId).get(),
+    ]);
+    if (!playerSnap.exists) return;
+    const coachName = getNotifName(coachSnap.data());
+    const message = `${coachName} awarded you the ${args.badgeTitle} badge on ${args.teamName}!`;
+
+    await db.collection('users').doc(args.playerId).collection('notifications').add({
+        type: 'team_badge_awarded',
+        from_uid: args.coachId,
+        from_name: coachName,
+        shots: 0,
+        badge_id: args.badgeId,
+        badge_name: args.badgeTitle,
+        team_name: args.teamName,
+        message,
+        created_at: admin.firestore.FieldValue.serverTimestamp(),
+        read: false,
+    });
+
+    const fcmToken: string | null = playerSnap.data()?.fcm_token ?? null;
+    if (!fcmToken) return;
+    await sendFcmMessage({
+        message: {
+            token: fcmToken,
+            notification: { title: '🏅 You earned a badge!', body: message },
+            data: { type: 'team_badge_awarded' },
+            android: { priority: 'normal' },
+            apns: { payload: { aps: { sound: 'default' } } },
+        },
+    });
+}
+
+// ── Coach badge reminders ──────────────────────────────────────────────────────
+// Runs daily. Reminds opted-in coaches who still own a team with players but
+// have not awarded any badge within their chosen window. Teams are read at send
+// time, so deleted teams never trigger a reminder.
+const DEFAULT_BADGE_REMINDER_DAYS = 7;
+const MAX_BADGE_REMINDER_DAYS = 60;
+
+export const sendCoachBadgeReminders = onSchedule(
+    { schedule: '0 17 * * *', timeZone: 'America/New_York', timeoutSeconds: 300 },
+    async (_event) => {
+        const usersSnap = await db.collection('users').where('team_badge_reminders', '==', true).get();
+        logger.info(`Coach badge reminders: checking ${usersSnap.size} opted-in users`);
+
+        await Promise.allSettled(usersSnap.docs.map(async (userDoc) => {
+            const data = userDoc.data();
+            const token: string | undefined = data['fcm_token'];
+            if (!token) return;
+
+            const rawDays = Number(data['team_badge_reminder_days']);
+            const windowDays = Number.isFinite(rawDays) && rawDays >= 1
+                ? Math.min(Math.floor(rawDays), MAX_BADGE_REMINDER_DAYS)
+                : DEFAULT_BADGE_REMINDER_DAYS;
+            const windowMs = windowDays * 24 * 60 * 60 * 1000;
+            const cutoff = Timestamp.fromMillis(Date.now() - windowMs);
+
+            // One reminder per window, so a quiet coach is not nagged every day.
+            const lastReminder: Timestamp | undefined = data['last_team_badge_reminder'];
+            if (lastReminder && lastReminder.toMillis() >= cutoff.toMillis()) return;
+
+            const teamsSnap = await db.collection('teams').where('owner_id', '==', userDoc.id).get();
+            const activeTeams = teamsSnap.docs.filter((t) => Array.isArray(t.data().players) && t.data().players.some((p: string) => p !== userDoc.id));
+            if (activeTeams.length === 0) return;
+
+            for (const team of teamsSnap.docs) {
+                const recent = await db.collection('team_badge_awards')
+                    .where('team_id', '==', team.id)
+                    .where('created_at', '>=', cutoff)
+                    .limit(1)
+                    .get();
+                if (!recent.empty) return;
+            }
+
+            try {
+                await admin.messaging().send({
+                    token,
+                    notification: {
+                        title: 'Reward your team 🏅',
+                        body: `You haven't awarded a team badge in ${windowDays} ${windowDays === 1 ? 'day' : 'days'}. Recognize a great teammate today!`,
+                    },
+                    data: { type: 'team_badge_reminder' },
+                    apns: { payload: { aps: { sound: 'default' } } },
+                    android: { priority: 'normal' },
+                });
+                await userDoc.ref.update({ last_team_badge_reminder: Timestamp.now() });
+            } catch (err: any) {
+                logger.warn(`Failed to send badge reminder to ${userDoc.id}: ${err?.message ?? err}`);
+            }
+        }));
+    }
+);
 
 /**
  * Returns the preferred display name for notifications.

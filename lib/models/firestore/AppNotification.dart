@@ -65,6 +65,7 @@ class AppNotification {
   bool get isWeeklyAvailable => type == 'weekly_achievements_available';
   bool get isAchievementCompleted => type == 'achievement_completed';
   bool get isTrophyEarned => type == 'cr_badge_earned';
+  bool get isTeamBadgeAwarded => type == 'team_badge_awarded';
   bool get isLevelCompleted => type == 'cr_level_completed';
 
   static AppNotification fromSnapshot(DocumentSnapshot<Map<String, dynamic>> doc) {

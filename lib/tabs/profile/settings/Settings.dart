@@ -40,6 +40,9 @@ class _ProfileSettingsState extends State<ProfileSettings> with WidgetsBindingOb
   bool _darkMode = false;
   String _friendNotificationMode = 'all'; // 'all' | 'selected' | 'off'
   bool _practiceReminders = false;
+  bool _ownsTeam = false;
+  bool _badgeReminders = false;
+  int _badgeReminderDays = 7;
   bool _publicProfile = true;
   bool _refreshingShots = false;
   bool _shotsRefreshedOnce = false;
@@ -95,6 +98,7 @@ class _ProfileSettingsState extends State<ProfileSettings> with WidgetsBindingOb
           'friend_notification_mode': 'off',
           'friend_notifications': false,
           'practice_reminders': false,
+          'team_badge_reminders': false,
         });
       } catch (_) {}
     }
@@ -103,6 +107,7 @@ class _ProfileSettingsState extends State<ProfileSettings> with WidgetsBindingOb
       setState(() {
         _friendNotificationMode = 'off';
         _practiceReminders = false;
+        _badgeReminders = false;
         _localPracticeReminders = false;
         _streakNotifications = false;
         _activeSessionNotification = false;
@@ -237,7 +242,13 @@ class _ProfileSettingsState extends State<ProfileSettings> with WidgetsBindingOb
           });
         }
         _practiceReminders = notificationsAllowed && (u.practiceReminders ?? false);
+        _badgeReminders = notificationsAllowed && (snapshot.data()?['team_badge_reminders'] == true);
+        final days = snapshot.data()?['team_badge_reminder_days'];
+        if (days is num && days >= 1) _badgeReminderDays = days.toInt().clamp(1, 60);
       });
+      Provider.of<FirebaseFirestore>(context, listen: false).collection('teams').where('owner_id', isEqualTo: user!.uid).limit(1).get().then((teams) {
+        if (mounted) setState(() => _ownsTeam = teams.docs.isNotEmpty);
+      }).catchError((_) {});
     }).catchError((_) {});
   }
 
@@ -878,6 +889,48 @@ class _ProfileSettingsState extends State<ProfileSettings> with WidgetsBindingOb
                                       minute: picked.minute,
                                     );
                                   }
+                                },
+                              ),
+                            if (_ownsTeam)
+                              SettingsTile.switchTile(
+                                title: Text('Team Badge Reminders', style: Theme.of(context).textTheme.bodyLarge),
+                                description: Text(
+                                  'Remind me if I haven\'t awarded a team badge in $_badgeReminderDays ${_badgeReminderDays == 1 ? 'day' : 'days'}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                leading: Icon(Icons.military_tech_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                                initialValue: _badgeReminders,
+                                onToggle: (bool value) async {
+                                  if (value && !await _ensureNotificationPermission()) return;
+                                  await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({
+                                    'team_badge_reminders': value,
+                                    'team_badge_reminder_days': _badgeReminderDays,
+                                  });
+                                  if (mounted) setState(() => _badgeReminders = value);
+                                },
+                              ),
+                            if (_ownsTeam && _badgeReminders)
+                              SettingsTile.navigation(
+                                title: Text('Badge Reminder Window', style: Theme.of(context).textTheme.bodyLarge),
+                                description: Text('$_badgeReminderDays ${_badgeReminderDays == 1 ? 'day' : 'days'}', style: Theme.of(context).textTheme.bodySmall),
+                                leading: Icon(Icons.date_range_rounded, color: Theme.of(context).colorScheme.onPrimary),
+                                onPressed: (ctx) async {
+                                  final picked = await showDialog<int>(
+                                    context: ctx,
+                                    builder: (dctx) => SimpleDialog(
+                                      title: const Text('Remind me after'),
+                                      children: [
+                                        for (final d in const [1, 2, 3, 5, 7, 14, 30])
+                                          SimpleDialogOption(
+                                            onPressed: () => Navigator.pop(dctx, d),
+                                            child: Text('$d ${d == 1 ? 'day' : 'days'} without an award'),
+                                          ),
+                                      ],
+                                    ),
+                                  );
+                                  if (picked == null) return;
+                                  await Provider.of<FirebaseFirestore>(context, listen: false).collection('users').doc(user!.uid).update({'team_badge_reminder_days': picked});
+                                  if (mounted) setState(() => _badgeReminderDays = picked);
                                 },
                               ),
                             SettingsTile.switchTile(
