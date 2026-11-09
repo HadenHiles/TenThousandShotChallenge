@@ -256,7 +256,7 @@ class _BadgePlayerPickerState extends State<_BadgePlayerPicker> {
                                   leading: TeamBadgeAvatar(player: player, radius: 20, accentColor: widget.accentColor),
                                   title: Text(player.name, style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 20, color: onPrimary)),
                                   trailing: todayHolderId == player.id
-                                      ? Icon(Icons.check_circle, color: onPrimary)
+                                      ? Icon(Icons.remove_circle_outline, color: onPrimary, semanticLabel: 'Tap to remove')
                                       : data.holders[widget.badge.id] == player.id
                                           ? Text('CURRENT', style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 14, color: onPrimary.withValues(alpha: 0.6)))
                                           : null,
