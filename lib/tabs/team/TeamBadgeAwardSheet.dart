@@ -58,7 +58,7 @@ class _TeamBadgeAwardSheetState extends State<_TeamBadgeAwardSheet> {
     final isPro = Provider.of<CustomerInfoNotifier?>(context, listen: false)?.isPro ?? false;
     if (!badge.isFree && !isPro && !awardedToday) {
       Navigator.of(context).pop();
-      await presentPaywallIfNeeded(context);
+      await presentPaywallIfNeeded(context, focus: PaywallFocus.teamBadges);
       return;
     }
 

@@ -166,7 +166,7 @@ class _CreateTeamState extends State<CreateTeam> {
         if (confirmedOwned.isNotEmpty) {
           final isPro = Provider.of<CustomerInfoNotifier?>(context, listen: false)?.isPro ?? false;
           if (!isPro) {
-            await presentPaywallIfNeeded(context);
+            await presentPaywallIfNeeded(context, focus: PaywallFocus.multiTeam);
             if (mounted) {
               final nowPro = Provider.of<CustomerInfoNotifier?>(context, listen: false)?.isPro ?? false;
               setState(() => _requiresProUpgrade = !nowPro);
@@ -596,7 +596,7 @@ class _CreateTeamState extends State<CreateTeam> {
               height: 52,
               child: ElevatedButton(
                 onPressed: () async {
-                  await presentPaywallIfNeeded(context);
+                  await presentPaywallIfNeeded(context, focus: PaywallFocus.multiTeam);
                   // After paywall closes, re-check status and update the gate flag
                   if (mounted) {
                     final nowPro = Provider.of<CustomerInfoNotifier?>(context, listen: false)?.isPro ?? false;

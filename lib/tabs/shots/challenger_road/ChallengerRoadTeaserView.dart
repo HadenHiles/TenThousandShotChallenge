@@ -85,7 +85,7 @@ class _ChallengerRoadTeaserViewState extends State<ChallengerRoadTeaserView> {
   }
 
   Future<void> _promptGoPro() async {
-    await presentPaywallIfNeeded(context);
+    await presentPaywallIfNeeded(context, focus: PaywallFocus.challengerRoad);
   }
 
   Widget _buildWalkthroughCard(BuildContext context) {

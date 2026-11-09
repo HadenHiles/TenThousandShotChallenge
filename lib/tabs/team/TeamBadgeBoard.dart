@@ -97,7 +97,7 @@ class TeamBadgeBoard extends StatelessWidget {
   Future<void> _openPicker(BuildContext context, TeamBadge badge, TeamBadgeAwards data) async {
     final isPro = Provider.of<CustomerInfoNotifier?>(context, listen: false)?.isPro ?? false;
     if (!badge.isFree && !isPro) {
-      await presentPaywallIfNeeded(context);
+      await _showProPreview(context, badge);
       return;
     }
     if (!context.mounted) return;
@@ -118,6 +118,48 @@ class TeamBadgeBoard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Lets free coaches see what a Pro badge is before deciding to unlock it.
+Future<void> _showProPreview(BuildContext context, TeamBadge badge) async {
+  final unlock = await showModalBottomSheet<bool>(
+    context: context,
+    backgroundColor: Theme.of(context).colorScheme.primary,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+    builder: (sheetContext) {
+      final onPrimary = Theme.of(sheetContext).colorScheme.onPrimary;
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(badge.asset, width: 96, height: 96, semanticLabel: badge.title),
+              const SizedBox(height: 8),
+              Text(badge.title.toUpperCase(), style: TextStyle(fontFamily: 'NovecentoSans', fontSize: 28, color: onPrimary)),
+              const SizedBox(height: 4),
+              Text(badge.description, textAlign: TextAlign.center, style: TextStyle(color: onPrimary.withValues(alpha: 0.8))),
+              const SizedBox(height: 12),
+              Text(
+                'Awarding this badge is a Pro feature. Hardest Worker is free for every coach.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: onPrimary.withValues(alpha: 0.7)),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(sheetContext).pop(true),
+                  child: Text('Unlock with Pro'.toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 18)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+  if (unlock == true && context.mounted) await presentPaywallIfNeeded(context, focus: PaywallFocus.teamBadges);
 }
 
 class _BadgePlayerPicker extends StatefulWidget {

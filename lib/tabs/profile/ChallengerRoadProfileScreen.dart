@@ -125,7 +125,7 @@ class _ChallengerRoadProfileScreenState extends State<ChallengerRoadProfileScree
                       showOnlyEarned: widget.userId != null,
                       highlightTrophyId: widget.highlightTrophyId,
                       onGoProTap: () async {
-                        await presentPaywallIfNeeded(context);
+                        await presentPaywallIfNeeded(context, focus: PaywallFocus.challengerRoad);
                       },
                     ),
                   ],

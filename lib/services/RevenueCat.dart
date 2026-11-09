@@ -7,7 +7,20 @@ import 'RevenueCatConfig.dart';
 import 'package:tenthousandshotchallenge/services/RevenueCatProvider.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-Future<void> presentPaywallIfNeeded(BuildContext context) async {
+/// The Pro feature a paywall should lead with. Each maps to its own RevenueCat
+/// offering (same products, different paywall design); `general` is the
+/// original offering that older app versions keep using.
+enum PaywallFocus {
+  teamBadges('pro_team_badges'),
+  challengerRoad('pro_challenger_road'),
+  multiTeam('pro_multi_team'),
+  general(RevenueCatConfig.proOfferingIdentifier);
+
+  const PaywallFocus(this.offeringId);
+  final String offeringId;
+}
+
+Future<void> presentPaywallIfNeeded(BuildContext context, {PaywallFocus focus = PaywallFocus.general}) async {
   if (!RevenueCatConfig.configured) {
     log('RevenueCat not configured - cannot show paywall');
     Fluttertoast.showToast(
@@ -21,13 +34,13 @@ Future<void> presentPaywallIfNeeded(BuildContext context) async {
   if (!context.mounted) return;
 
   try {
-    // Fetch the specific "Pro Access Paywall" offering by its identifier.
+    // Prefer the feature-specific offering, falling back to the original one.
     Offering? proOffering;
     try {
       final offerings = await Purchases.getOfferings();
-      proOffering = offerings.all[RevenueCatConfig.proOfferingIdentifier];
+      proOffering = offerings.all[focus.offeringId] ?? offerings.all[RevenueCatConfig.proOfferingIdentifier];
     } catch (e) {
-      log('Could not fetch offering "${RevenueCatConfig.proOfferingIdentifier}", will use default: $e');
+      log('Could not fetch offering "${focus.offeringId}", will use default: $e');
     }
 
     // Only shows the paywall if the user does not already have the pro entitlement.

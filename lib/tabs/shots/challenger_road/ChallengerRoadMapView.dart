@@ -427,7 +427,7 @@ class _ChallengerRoadMapViewState extends State<ChallengerRoadMapView> {
   }
 
   Future<void> _promptGoPro() async {
-    await presentPaywallIfNeeded(context);
+    await presentPaywallIfNeeded(context, focus: PaywallFocus.challengerRoad);
   }
 
   Future<_CRMapData> _loadMapData() async {

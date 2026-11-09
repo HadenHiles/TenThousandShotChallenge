@@ -343,7 +343,7 @@ class _StartChallengeScreenState extends State<StartChallengeScreen> {
 
           if (isPreviewMode && widget.levelDoc.level >= previewMaxLevel) {
             // Free preview gate: users can play level 1 but cannot unlock level 2.
-            await presentPaywallIfNeeded(context);
+            await presentPaywallIfNeeded(context, focus: PaywallFocus.challengerRoad);
             if (!mounted) return;
 
             // If user upgraded in the paywall, continue progression immediately.

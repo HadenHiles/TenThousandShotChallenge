@@ -297,7 +297,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
               ),
             ),
             TextButton(
-              onPressed: () => presentPaywallIfNeeded(context),
+              onPressed: () => presentPaywallIfNeeded(context, focus: PaywallFocus.multiTeam),
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 minimumSize: Size.zero,
@@ -330,7 +330,7 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
             ),
           ),
           TextButton(
-            onPressed: () => presentPaywallIfNeeded(context),
+            onPressed: () => presentPaywallIfNeeded(context, focus: PaywallFocus.multiTeam),
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               minimumSize: Size.zero,

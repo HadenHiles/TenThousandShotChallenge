@@ -362,7 +362,7 @@ List<RouteBase> _buildTrainRoutes() {
             userId: userId,
             isPreviewMode: true,
             onCloseTap: () => context.canPop() ? context.pop() : context.go(AppRoutePaths.app),
-            onPreviewLevelUnlockAttempted: () => presentPaywallIfNeeded(context),
+            onPreviewLevelUnlockAttempted: () => presentPaywallIfNeeded(context, focus: PaywallFocus.challengerRoad),
           ),
         );
       },

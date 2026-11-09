@@ -1297,7 +1297,7 @@ class _ShotsState extends State<Shots> with WidgetsBindingObserver {
               mapBottomInset: inset,
               bannerBottomInset: bannerBottom,
               hasActiveSession: sessionPanelHeight > 0,
-              onPreviewLevelUnlockAttempted: () => presentPaywallIfNeeded(context),
+              onPreviewLevelUnlockAttempted: () => presentPaywallIfNeeded(context, focus: PaywallFocus.challengerRoad),
             );
           },
         );
