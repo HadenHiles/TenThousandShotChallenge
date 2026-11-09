@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tenthousandshotchallenge/models/firestore/AppNotification.dart';
 import 'package:tenthousandshotchallenge/navigation/AppRoutePaths.dart';
+import 'package:tenthousandshotchallenge/navigation/AppSectionNavigation.dart';
 import 'package:tenthousandshotchallenge/services/LocalNotificationService.dart';
 import 'package:tenthousandshotchallenge/Navigation.dart' show openChallengerRoadSignal;
 
@@ -249,7 +250,7 @@ class _NotificationTile extends StatelessWidget {
           context.push(AppRoutePaths.profileChallengerRoad);
         }
       } else if (n.isTeamBadgeAwarded) {
-        context.go(AppRoutePaths.app);
+        goToAppSection(context, AppSection.community, communitySection: CommunitySection.team);
       } else if (n.isLevelCompleted) {
         // Navigate back to the shell first, then signal Train tab to open the road.
         context.go(AppRoutePaths.app);
