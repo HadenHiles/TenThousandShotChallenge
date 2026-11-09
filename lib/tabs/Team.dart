@@ -1586,19 +1586,29 @@ class _TeamPageState extends State<TeamPage> with SingleTickerProviderStateMixin
             ),
           ],
         ),
-        subtitle: isDeletedUser || awards.heldBy(rowPlayerId).isEmpty ? null : TeamBadgeStrip(counts: awards.heldBy(rowPlayerId)),
-        title: Text(
-          displayName,
-          style: TextStyle(
-            fontFamily: 'NovecentoSans',
-            fontSize: 20,
-            color: isDeletedUser
-                ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
-                : (plyr.profile?.reference?.id == user?.uid)
-                    ? colorFromHex(_currentTeam?.primaryColor)
-                    : Theme.of(context).colorScheme.onSurface,
-            fontWeight: (plyr.profile?.reference?.id == user?.uid) ? FontWeight.bold : FontWeight.normal,
-          ),
+        title: Row(
+          children: [
+            if (!isDeletedUser && awards.heldBy(rowPlayerId).isNotEmpty) ...[
+              TeamBadgeStrip(counts: awards.heldBy(rowPlayerId), size: 24),
+              const SizedBox(width: 4),
+            ],
+            Flexible(
+              child: Text(
+                displayName,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: 'NovecentoSans',
+                  fontSize: 20,
+                  color: isDeletedUser
+                      ? Theme.of(context).colorScheme.onSurface.withOpacity(0.4)
+                      : (plyr.profile?.reference?.id == user?.uid)
+                          ? colorFromHex(_currentTeam?.primaryColor)
+                          : Theme.of(context).colorScheme.onSurface,
+                  fontWeight: (plyr.profile?.reference?.id == user?.uid) ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+          ],
         ),
         trailing: Column(
           mainAxisSize: MainAxisSize.min,
