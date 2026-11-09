@@ -150,6 +150,12 @@ Future<void> _showProPreview(BuildContext context, TeamBadge badge) async {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => Navigator.of(sheetContext).pop(true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: onPrimary,
+                    foregroundColor: Theme.of(sheetContext).colorScheme.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 0,
+                  ),
                   child: Text('Unlock with Pro'.toUpperCase(), style: const TextStyle(fontFamily: 'NovecentoSans', fontSize: 18)),
                 ),
               ),
